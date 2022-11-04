@@ -63,7 +63,7 @@ chan network = [0] of {
 // Setup for LTL 
 mtype : client verifiedAlice
 mtype : client verifiedBob
-mtype : msgCnt nonceStoredAlice, nonceStoredBob // Unused in Phase 1, will be used in Phase 2. LTL short circuits to true 
+mtype : msgCnt nonceStoredAlice, nonceStoredBob // Add interception check
 
 
 // ============= DEFINE LTL ===================
@@ -84,11 +84,11 @@ mtype : msgCnt nonceStoredAlice, nonceStoredBob // Unused in Phase 1, will be us
 // Both parties received their packet from the intended party and died gracefully
 #define PartiesTerminated ( AliceIsVerified && BobIsVerified )
 
-ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }   // -N IsEncrptyed 
-ltl NoInteruption   { [] ( PartiesTerminated  -> ( AliceReceivedBob && BobReceivedAlice ) ) }   // -N NoInteruption
-ltl AliceIsSecure   { [] ( AliceReceivedBob   -> NonceStoredVerifiedAlice ) }
+// ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }
+// ltl NoInteruption   { [] ( PartiesTerminated  -> ( AliceReceivedBob && BobReceivedAlice ) ) } 
+ltl AliceIsSecure   { [] ( AliceReceivedBob   -> NonceStoredVerifiedAlice ) } 
 ltl BobIsSecure     { [] ( BobReceivedAlice   -> NonceStoredVerifiedBob ) }
-ltl Termination     { [] ( PartiesTerminated )}
+// ltl Termination     { [] ( PartiesTerminated )}
 
 
 // ============= DEFINE PARTISANS ============= 

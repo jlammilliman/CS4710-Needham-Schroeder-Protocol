@@ -72,8 +72,6 @@ chan network = [0] of {
 // Setup for LTL 
 mtype : client verifiedAlice
 mtype : client verifiedBob
-mtype : msgCnt nonceStoredAlice, nonceStoredBob // Unused in Phase 1, will be used in Phase 2. LTL short circuits to true 
-
 
 // ============= DEFINE LTL ===================
 // -> We want to validate that Alice and Bob communicate without interuption
@@ -82,17 +80,15 @@ mtype : msgCnt nonceStoredAlice, nonceStoredBob // Unused in Phase 1, will be us
 #define AliceIsVerified ( verifiedAlice != 0 )
 #define BobIsVerified   ( verifiedBob != 0 )
 
-// End in a state where the received packet is from the intended party
-#define AliceReceivedBob ( verifiedAlice == bob )
-#define BobReceivedAlice ( verifiedBob == alice )
+// End in a state where the received packet count is from the intended party
+#define AliceReceivedBob ( verifiedAlice == bob ) // Alice should receive 1, send 2
+#define BobReceivedAlice ( verifiedBob == alice ) // Bob should receive 2, send 1
 
 // Both parties received their packet from the intended party and died gracefully
 #define PartiesTerminated ( AliceIsVerified && BobIsVerified )
 
-ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }   // -N IsEncrptyed 
-// ltl NoInteruption   { [] ( PartiesTerminated  -> ( AliceReceivedBob && BobReceivedAlice ) ) }   // -N NoInteruption
-// ltl AliceIsSecure   { [] ( AliceReceivedBob  ) } // We can ignore nonce implication statement in phase 1
-// ltl BobIsSecure     { [] ( BobReceivedAlice  ) } // ^^^ ditto comment
+ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }
+// ltl NoInteruption   { [] ( PartiesTerminated  -> ( AliceReceivedBob && BobReceivedAlice ) ) }
 // ltl Termination     { [] ( PartiesTerminated ) }
 
 
@@ -107,7 +103,7 @@ active proctype Alice() {
 
     // Get in the mood to send a message to our betrothed
     atomic {
-        verifiedAlice = 0 // arbitrary value -> 0 allows simple comparison to see if we received anything
+        verifiedAlice = 0 // We have received nothing
         if
             :: receiver = bob
         fi
@@ -153,7 +149,7 @@ active proctype Alice() {
             :: receiver == bob ->
                 msgOut.key = keyBob
         fi
-        network ! rId(receiver, msgOut) // Congrats, we have a friend
+        network ! rId(receiver, msgOut) // Congrats, we have a friend. Send him a message to tell him how excited we are
     }
     goto end
 err:
