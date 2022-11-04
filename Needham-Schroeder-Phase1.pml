@@ -127,7 +127,6 @@ active proctype Alice() {
             :: msgIn.key == key ->
                 skip
             :: else ->
-                // printf("Invalid Key for A\n") // Unreachable state
                 goto err
         fi
 
@@ -135,7 +134,6 @@ active proctype Alice() {
             :: msgIn.container1 == nonce ->
                 skip
             :: else ->
-                // printf("Invalid Nonce for A\n") // Unreachable staet
                 goto err
         fi
         verifiedAlice = receiver // If it's the first response from Bob, send something again
@@ -153,7 +151,7 @@ active proctype Alice() {
     }
     goto end
 err:
-    // printf("err in Alice") // Unreachable state
+    // printf("Alice go err") // Unreachable state
 end:
 }
 
@@ -174,7 +172,6 @@ active proctype Bob() {
             :: msgIn.key == key ->
                 skip
             :: else ->
-                // printf("Invalid Key for B: %e\n", msgIn.key) // Unreachable state
                 goto err
         fi
     }
@@ -198,14 +195,12 @@ active proctype Bob() {
             :: msgIn.key == key ->
                 skip
             :: else ->
-                // printf("Invalid Key for B\n") // Unreachable state
                 goto err
         fi
         if
             :: msgIn.container1 == nonce ->
                 skip
             :: else ->
-                // printf("Invalid Nonce for B\n") // Unreachable state
                 goto err
         fi
 
@@ -213,7 +208,7 @@ active proctype Bob() {
     }
     goto end
 err:
-    // printf("err in Bob") // Unreachable state
+    // printf("Bob go err") // Unreachable state
 end:
 }
 
