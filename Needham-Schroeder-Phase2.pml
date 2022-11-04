@@ -23,7 +23,7 @@
     Phase 2:
      -> Add an intruder to the Basic Model (For details see the Phase 1 specification)
      model who's goal is to intercept but not decrypt any information
-     -> Simulate the model and observe the outpt sequence
+     -> Simulate the model and observe the output sequence
      -> Verify that Alice and Bob botth terminate gracefully
      -> Explore what happens when we manipulate the fairness policy
 
@@ -46,24 +46,23 @@
 
 // Construct our mtypes
 mtype : packet = { payload, msgNumAndType, rId } 
-mtype : client = { alice, bob }                                         // Define partisans
-mtype : msgCnt = { null, agentAlice, agentBob, nonceAlice, nonceBob }   // define msg container
-mtype : msgKey = { keyAlice, keyBob }
+mtype : client = { alice, bob, chalk }                                         // Define partisans
+mtype : msgCnt = { null, agentAlice, agentBob, agentChalk, nonceAlice, nonceBob, nonceChalk }   // define msg container
+mtype : msgKey = { keyAlice, keyBob, keyChalk }
 
 // Define the struct for our messages
 typedef encryptedMsg { mtype : msgCnt container1, container2; mtype : msgKey key }
 
 // Define Sync channel
 chan network = [0] of {
-    mtype : msgType,
+    mtype : packet,
     mtype : client, // Used to specify intended recipient
     encryptedMsg
 }
 
 // Setup for LTL 
-mtype : client verifiedAlice
-mtype : client verifiedBob
-mtype : msgCnt nonceStoredAlice, nonceStoredBob // Add interception check
+mtype : client verifiedAlice, verifiedBob, verifiedXalk
+mtype : msgCnt nonceStoredAlice, nonceStoredBob, nonceStoredChalk // Add interception check
 
 
 // ============= DEFINE LTL ===================
@@ -72,6 +71,9 @@ mtype : msgCnt nonceStoredAlice, nonceStoredBob // Add interception check
 // Iff verifiedClient != 0, we received something (meaning we succsessfully sent and received a message)
 #define AliceIsVerified ( verifiedAlice != 0 )
 #define BobIsVerified   ( verifiedBob != 0 )
+
+// Chalk should hacky hacky
+#define ChalkSucks   ( verifiedXalk != 0 )
 
 // End in a state where the received packet is from the intended party
 #define AliceReceivedBob ( verifiedAlice == bob )
@@ -86,9 +88,9 @@ mtype : msgCnt nonceStoredAlice, nonceStoredBob // Add interception check
 
 // ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }
 // ltl NoInteruption   { [] ( PartiesTerminated  -> ( AliceReceivedBob && BobReceivedAlice ) ) } 
-ltl AliceIsSecure   { [] ( AliceReceivedBob   -> NonceStoredVerifiedAlice ) } 
-ltl BobIsSecure     { [] ( BobReceivedAlice   -> NonceStoredVerifiedBob ) }
-// ltl Termination     { [] ( PartiesTerminated )}
+// ltl AliceIsSecure   { [] ( AliceReceivedBob   -> NonceStoredVerifiedAlice ) } 
+// ltl BobIsSecure     { [] ( BobReceivedAlice   -> NonceStoredVerifiedBob ) }
+ltl Termination     { [] ( PartiesTerminated )}
 
 
 // ============= DEFINE PARTISANS ============= 
@@ -121,7 +123,7 @@ active proctype Alice() {
     // If we detect our own message in the network, ignore it
     atomic {
         network ? msgNumAndType(alice, msgIn)
-        
+
         if  // If it's our key, ignore the message
             :: msgIn.key == key ->
                 skip
@@ -156,6 +158,7 @@ err:
 end:
 }
 
+
 // ============= BOB ==========================
 active proctype Bob() {
     mtype : msgCnt nonce = nonceBob
@@ -173,7 +176,6 @@ active proctype Bob() {
             :: msgIn.key == key ->
                 skip
             :: else ->
-                // printf("Invalid Key for B: %e\n", msgIn.key) // Unreachable state
                 goto err
         fi
     }
@@ -197,21 +199,72 @@ active proctype Bob() {
             :: msgIn.key == key ->
                 skip
             :: else ->
-                // printf("Invalid Key for B\n") // Unreachable state
                 goto err
         fi
         if
             :: msgIn.container1 == nonce ->
                 skip
             :: else ->
-                // printf("Invalid Nonce for B\n") // Unreachable state
                 goto err
         fi
 
         verifiedBob = receiver
     }
-    goto end
+    // goto end
 err:
-    // printf("err in Bob") // Unreachable state
-end:
+    // printf("Bob go err") // Unreachable state
+// end:
+}
+
+// ============= INTERCEPTOR ==================
+active proctype Chalk() {
+    mtype : msgCnt nonce = nonceChalk
+    mtype : msgKey key = keyChalk
+    encryptedMsg msgOut, msgIn      // create two encrypted objects
+    mtype : client receiver, rando        // open a receiving client
+
+    // Chalk can:
+    // Choose to intercept a message:
+    // Choose to modify the message:
+    // Arbitrarily modify the intended recipient and send the message back out:
+    verifiedXalk = 0
+    rando = 0
+
+    // If we detect
+    atomic {
+        select(rando: 2 .. 3) // assign abitrary recipient
+        network ? rId(rando, msgIn)
+        if
+            :: msgIn.container1 == nonce ->
+                skip
+            :: else ->
+                goto err
+        fi
+
+        // If it's Somebody, respond
+        atomic {
+            if
+                :: msgIn.container1 == agentAlice || msgIn.container1 == agentBob ->
+                    if
+                        :: rando == alice ->
+                            receiver = alice
+                            msgOut.key = keyAlice
+                        :: rando == bob -> 
+                            receiver = bob
+                            msgOut.key = keyBob
+                        :: else -> 
+                            skip
+                    
+                    fi
+                    msgOut.key = keyAlice
+            fi
+            msgOut.container1 = msgIn.container2
+            msgOut.container2 = nonce
+            network ! msgNumAndType(receiver, msgOut)
+        }
+    }
+
+    
+err:
+
 }

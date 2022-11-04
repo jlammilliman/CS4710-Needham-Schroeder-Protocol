@@ -89,10 +89,10 @@ mtype : client verifiedBob
 
 ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }
 // ltl NoInteruption   { [] ( PartiesTerminated  -> ( AliceReceivedBob && BobReceivedAlice ) ) }
-// ltl Termination     { [] ( PartiesTerminated ) }
+// ltl Termination     { [] <> ( PartiesTerminated ) }
 
 
-// ============= DEFINE PARTISANS ============= 
+// ============= DEFINE PARTISANS =============  
 
 // ============= ALICE ======================== 
 active proctype Alice() {
@@ -149,10 +149,10 @@ active proctype Alice() {
         fi
         network ! rId(receiver, msgOut) // Congrats, we have a friend. Send him a message to tell him how excited we are
     }
-    goto end
+    // goto end
 err:
     // printf("Alice go err") // Unreachable state
-end:
+// end:
 }
 
 // ============= BOB ==========================
@@ -206,10 +206,10 @@ active proctype Bob() {
 
         verifiedBob = receiver
     }
-    goto end
+    // goto end
 err:
     // printf("Bob go err") // Unreachable state
-end:
+// end:
 }
 
 // ============= INTERCEPTOR ==================
