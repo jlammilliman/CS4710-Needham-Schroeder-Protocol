@@ -223,10 +223,6 @@ active proctype Chalk() {
     encryptedMsg msgOut, msgIn      // create two encrypted objects
     mtype : client receiver, rando        // open a receiving client
 
-    // Chalk can:
-    // Choose to intercept a message:
-    // Choose to modify the message:
-    // Arbitrarily modify the intended recipient and send the message back out:
     verifiedXalk = 0
     rando = 0
 
@@ -241,7 +237,7 @@ active proctype Chalk() {
                 goto err
         fi
 
-        // If it's Somebody, respond
+        // If there's something within the channel, sniff that baby
         atomic {
             if
                 :: msgIn.container1 == agentAlice || msgIn.container1 == agentBob ->
@@ -263,8 +259,5 @@ active proctype Chalk() {
             network ! msgNumAndType(receiver, msgOut)
         }
     }
-
-    
 err:
-
 }

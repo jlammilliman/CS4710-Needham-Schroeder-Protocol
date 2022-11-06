@@ -64,7 +64,7 @@ typedef encryptedMsg { mtype : msgCnt container1, container2; mtype : msgKey key
 
 // Define Sync channel
 chan network = [0] of {
-    mtype : msgType,
+    mtype : packet,
     mtype : client, // Used to specify intended recipient
     encryptedMsg
 }
@@ -87,9 +87,9 @@ mtype : client verifiedBob
 // Both parties received their packet from the intended party and died gracefully
 #define PartiesTerminated ( AliceIsVerified && BobIsVerified )
 
-ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }
+// ltl IsEncrypted     { [] ( PartiesTerminated  -> ( AliceReceivedBob <-> BobReceivedAlice) ) }
 // ltl NoInteruption   { [] ( PartiesTerminated  -> ( AliceReceivedBob && BobReceivedAlice ) ) }
-// ltl Termination     { [] <> ( PartiesTerminated ) }
+ltl Termination     { [] <> ( PartiesTerminated ) }
 
 
 // ============= DEFINE PARTISANS =============  
